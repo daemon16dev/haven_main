@@ -8,6 +8,7 @@ var player: CharacterBody3D = null
 # Child Joystick
 const JoystickScript = preload("res://scripts/virtual_joystick.gd")
 @onready var joystick: Control = get_node_or_null("VirtualJoystick") as Control
+@onready var look_zone: Control = get_node_or_null("TouchLookZone") as Control
 
 # Touch look tracking
 var _look_touch_id: int = -1
@@ -142,11 +143,16 @@ func _is_touching_button(pos: Vector2) -> bool:
 			return true
 	return false
 
+func _is_in_look_zone(pos: Vector2) -> bool:
+	if look_zone and look_zone.is_inside_tree() and look_zone.is_visible_in_tree():
+		return look_zone.get_global_rect().has_point(pos)
+	# Fallback if node not found: strictly right side upper box (X: 52%-98%, Y: 10%-50%)
+	var vp_size = get_viewport_rect().size
+	return pos.x >= vp_size.x * 0.52 and pos.x <= vp_size.x * 0.98 and pos.y >= vp_size.y * 0.10 and pos.y <= vp_size.y * 0.50
+
 func _input(event: InputEvent) -> void:
 	if not visible:
 		return
-
-	var vp_size = get_viewport_rect().size
 
 	if event is InputEventScreenTouch:
 		if event.pressed:
@@ -190,12 +196,11 @@ func _input(event: InputEvent) -> void:
 				_toggle_sprint()
 				return
 
-			# Camera drag look area: Right side of screen (X >= 45% and not touching any button)
-			if event.position.x >= vp_size.x * 0.45:
+			# Camera drag look area: ONLY inside the designated TouchLookZone box above the buttons!
+			if _look_touch_id == -1 and _is_in_look_zone(event.position):
 				if not _is_touching_button(event.position):
-					if _look_touch_id == -1:
-						_look_touch_id = event.index
-						_last_look_pos = event.position
+					_look_touch_id = event.index
+					_last_look_pos = event.position
 		else:
 			if event.index == _shoot_touch_id:
 				_shoot_touch_id = -1

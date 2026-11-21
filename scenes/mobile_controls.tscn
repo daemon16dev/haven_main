@@ -1,8 +1,8 @@
 [gd_scene format=3 uid="uid://clhawqoeaye1u"]
 
 [ext_resource type="Script" uid="uid://bovisuvlth13h" path="res://scripts/mobile_controls.gd" id="1_mobile"]
-[ext_resource type="PackedScene" path="res://scenes/virtual_joystick.tscn" id="2_joystick_scene"]
 [ext_resource type="Texture2D" uid="uid://1o5m0dhwgn1q" path="res://assets/ui/btn_fire_normal.png" id="2_fire_n"]
+[ext_resource type="PackedScene" uid="uid://bu6dq6xb4icfc" path="res://scenes/virtual_joystick.tscn" id="2_joystick_scene"]
 [ext_resource type="Texture2D" uid="uid://scvkqbfq4d7u" path="res://assets/ui/btn_fire_pressed.png" id="3_fire_p"]
 [ext_resource type="Texture2D" uid="uid://6g26u4sw6vn7" path="res://assets/ui/btn_scope_normal.png" id="4_scope_n"]
 [ext_resource type="Texture2D" uid="uid://d1c2ddsx8abxh" path="res://assets/ui/btn_scope_pressed.png" id="5_scope_p"]
@@ -20,8 +20,22 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("1_mobile")
 
-[node name="VirtualJoystick" parent="." instance=ExtResource("2_joystick_scene")]
+[node name="VirtualJoystick" parent="." unique_id=2093049457 instance=ExtResource("2_joystick_scene")]
 layout_mode = 1
+
+[node name="TouchLookZone" type="Control" parent="." unique_id=782910384]
+layout_mode = 1
+anchor_left = 0.52
+anchor_top = 0.1
+anchor_right = 0.98
+anchor_bottom = 0.5
+offset_left = -48.599976
+offset_top = -71.0
+offset_right = 14.0
+offset_bottom = 21.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
 [node name="RightActionPad" type="Control" parent="." unique_id=1140962041]
 layout_mode = 1
