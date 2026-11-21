@@ -1,0 +1,20 @@
+[gd_scene format=3 uid="uid://b6wmwcakjho7l"]
+
+[ext_resource type="PackedScene" uid="uid://cwthc0ktxkrt5" path="res://assets/zombie/scene.gltf" id="1_1vlb3"]
+[ext_resource type="Script" uid="uid://c43e0pwidq2yf" path="res://scripts/zombie.gd" id="1_httt1"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_hav35"]
+radius = 1.277832
+height = 2.8613281
+
+[node name="Zombie" type="CharacterBody3D" unique_id=603446177]
+script = ExtResource("1_httt1")
+
+[node name="CollisionShape" type="CollisionShape3D" parent="." unique_id=1628411895]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4302952, 0)
+shape = SubResource("CapsuleShape3D_hav35")
+
+[node name="Mesh" parent="." unique_id=2109233516 instance=ExtResource("1_1vlb3")]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0, 0)
+
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="." unique_id=498657142]
