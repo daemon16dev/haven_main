@@ -3,17 +3,11 @@ class_name MobileControls
 
 signal look_moved(relative: Vector2)
 
-@export var joystick_radius: float = 65.0
-@export var joystick_deadzone: float = 0.15
-
 var player: CharacterBody3D = null
 
-# Joystick tracking
-var _move_touch_id: int = -1
-var _joystick_home: Vector2 = Vector2.ZERO
-var _joystick_center: Vector2 = Vector2.ZERO
-var _joystick_knob_pos: Vector2 = Vector2.ZERO
-var _move_vector: Vector2 = Vector2.ZERO
+# Child Joystick
+const JoystickScript = preload("res://scripts/virtual_joystick.gd")
+@onready var joystick: Control = get_node_or_null("VirtualJoystick") as Control
 
 # Touch look tracking
 var _look_touch_id: int = -1
@@ -41,16 +35,18 @@ var _buttons_list: Array[Control] = []
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_setup_joystick()
 	_setup_buttons()
-	_update_joystick_home()
-	get_viewport().size_changed.connect(_update_joystick_home)
 
-func _update_joystick_home() -> void:
-	var vp_size = get_viewport_rect().size
-	_joystick_home = Vector2(110.0, vp_size.y - 120.0)
-	_joystick_center = _joystick_home
-	_joystick_knob_pos = Vector2.ZERO
-	queue_redraw()
+func _setup_joystick() -> void:
+	if not joystick:
+		joystick = get_node_or_null("VirtualJoystick") as Control
+	if not joystick:
+		var joy_scene = load("res://scenes/virtual_joystick.tscn")
+		if joy_scene:
+			joystick = joy_scene.instantiate() as Control
+			add_child(joystick)
+			move_child(joystick, 0)
 
 func _setup_buttons() -> void:
 	if not right_pad:
@@ -154,7 +150,7 @@ func _input(event: InputEvent) -> void:
 
 	if event is InputEventScreenTouch:
 		if event.pressed:
-			# Check direct touch on Fire button
+			# Direct touch on action buttons
 			if btn_shoot and btn_shoot.is_visible_in_tree() and btn_shoot.get_global_rect().has_point(event.position):
 				_shoot_touch_id = event.index
 				_on_shoot_down()
@@ -162,7 +158,6 @@ func _input(event: InputEvent) -> void:
 					btn_shoot.button_pressed = true
 				return
 
-			# Check direct touch on Scope button
 			if btn_scope and btn_scope.is_visible_in_tree() and btn_scope.get_global_rect().has_point(event.position):
 				_scope_touch_id = event.index
 				_on_scope_down()
@@ -170,7 +165,6 @@ func _input(event: InputEvent) -> void:
 					btn_scope.button_pressed = true
 				return
 
-			# Check direct touch on Jump button
 			if btn_jump and btn_jump.is_visible_in_tree() and btn_jump.get_global_rect().has_point(event.position):
 				_jump_touch_id = event.index
 				Input.action_press("ui_accept")
@@ -178,7 +172,6 @@ func _input(event: InputEvent) -> void:
 					btn_jump.button_pressed = true
 				return
 
-			# Check direct touch on Reload button
 			if btn_reload and btn_reload.is_visible_in_tree() and btn_reload.get_global_rect().has_point(event.position):
 				_reload_touch_id = event.index
 				Input.action_press("reload")
@@ -186,7 +179,6 @@ func _input(event: InputEvent) -> void:
 					btn_reload.button_pressed = true
 				return
 
-			# Check direct touch on Crouch button
 			if btn_crouch and btn_crouch.is_visible_in_tree() and btn_crouch.get_global_rect().has_point(event.position):
 				_crouch_touch_id = event.index
 				Input.action_press("crouch")
@@ -194,19 +186,12 @@ func _input(event: InputEvent) -> void:
 					btn_crouch.button_pressed = true
 				return
 
-			# Check direct touch on Sprint button
 			if btn_sprint and btn_sprint.is_visible_in_tree() and btn_sprint.get_global_rect().has_point(event.position):
 				_toggle_sprint()
 				return
 
-			# Left area: Movement joystick
-			if event.position.x < vp_size.x * 0.48 and event.position.y > vp_size.y * 0.25:
-				if _move_touch_id == -1:
-					_move_touch_id = event.index
-					_joystick_center = event.position
-					_update_joystick(event.position)
-			# Right area: Camera drag look (if not pressing any action button)
-			elif event.position.x >= vp_size.x * 0.45:
+			# Camera drag look area: Right side of screen (X >= 45% and not touching any button)
+			if event.position.x >= vp_size.x * 0.45:
 				if not _is_touching_button(event.position):
 					if _look_touch_id == -1:
 						_look_touch_id = event.index
@@ -237,68 +222,18 @@ func _input(event: InputEvent) -> void:
 				Input.action_release("crouch")
 				if btn_crouch and btn_crouch is TextureButton:
 					btn_crouch.button_pressed = false
-			elif event.index == _move_touch_id:
-				_reset_joystick()
 			elif event.index == _look_touch_id:
 				_look_touch_id = -1
 
 	elif event is InputEventScreenDrag:
-		if event.index == _move_touch_id:
-			_update_joystick(event.position)
-		elif event.index == _look_touch_id:
+		if event.index == _look_touch_id:
 			var rel = event.relative
 			look_moved.emit(rel)
 			_last_look_pos = event.position
 
-func _update_joystick(touch_pos: Vector2) -> void:
-	var diff = touch_pos - _joystick_center
-	var dist = diff.length()
-	if dist > joystick_radius:
-		diff = diff.normalized() * joystick_radius
-	_joystick_knob_pos = diff
-	queue_redraw()
-
-	var norm = diff / joystick_radius
-	if norm.length() < joystick_deadzone:
-		_move_vector = Vector2.ZERO
-	else:
-		_move_vector = norm
-
-	_apply_movement(_move_vector)
-
-func _reset_joystick() -> void:
-	_move_touch_id = -1
-	_joystick_center = _joystick_home
-	_joystick_knob_pos = Vector2.ZERO
-	_move_vector = Vector2.ZERO
-	_apply_movement(Vector2.ZERO)
-	queue_redraw()
-
-func _apply_movement(vec: Vector2) -> void:
-	# Strafe X: -1 Left, +1 Right
-	if vec.x < -joystick_deadzone:
-		Input.action_press("strafe_left", -vec.x)
-		Input.action_release("strafe_right")
-	elif vec.x > joystick_deadzone:
-		Input.action_press("strafe_right", vec.x)
-		Input.action_release("strafe_left")
-	else:
-		Input.action_release("strafe_left")
-		Input.action_release("strafe_right")
-
-	# Walk Y: -1 Forward, +1 Backward
-	if vec.y < -joystick_deadzone:
-		Input.action_press("walk_forward", -vec.y)
-		Input.action_release("walk_backward")
-	elif vec.y > joystick_deadzone:
-		Input.action_press("walk_backward", vec.y)
-		Input.action_release("walk_forward")
-	else:
-		Input.action_release("walk_forward")
-		Input.action_release("walk_backward")
-
 func reset_all_inputs() -> void:
-	_reset_joystick()
+	if joystick:
+		joystick.reset()
 	_look_touch_id = -1
 	if _shoot_touch_id != -1:
 		_shoot_touch_id = -1
@@ -332,17 +267,3 @@ func reset_all_inputs() -> void:
 	Input.action_release("ui_accept")
 	Input.action_release("crouch")
 	Input.action_release("reload")
-
-func _draw() -> void:
-	if not visible:
-		return
-
-	# Draw virtual joystick base ring
-	draw_circle(_joystick_center, joystick_radius, Color(0.1, 0.12, 0.18, 0.42))
-	draw_arc(_joystick_center, joystick_radius, 0.0, TAU, 32, Color(1.0, 1.0, 1.0, 0.35), 2.0)
-	draw_arc(_joystick_center, joystick_radius * joystick_deadzone, 0.0, TAU, 16, Color(1.0, 1.0, 1.0, 0.15), 1.0)
-
-	# Draw movable knob
-	var knob_center = _joystick_center + _joystick_knob_pos
-	draw_circle(knob_center, 28.0, Color(0.85, 0.9, 1.0, 0.65))
-	draw_arc(knob_center, 28.0, 0.0, TAU, 24, Color(1.0, 1.0, 1.0, 0.9), 2.0)

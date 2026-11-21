@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://clhawqoeaye1u"]
 
 [ext_resource type="Script" uid="uid://bovisuvlth13h" path="res://scripts/mobile_controls.gd" id="1_mobile"]
+[ext_resource type="PackedScene" path="res://scenes/virtual_joystick.tscn" id="2_joystick_scene"]
 [ext_resource type="Texture2D" uid="uid://1o5m0dhwgn1q" path="res://assets/ui/btn_fire_normal.png" id="2_fire_n"]
 [ext_resource type="Texture2D" uid="uid://scvkqbfq4d7u" path="res://assets/ui/btn_fire_pressed.png" id="3_fire_p"]
 [ext_resource type="Texture2D" uid="uid://6g26u4sw6vn7" path="res://assets/ui/btn_scope_normal.png" id="4_scope_n"]
@@ -18,6 +19,9 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("1_mobile")
+
+[node name="VirtualJoystick" parent="." instance=ExtResource("2_joystick_scene")]
+layout_mode = 1
 
 [node name="RightActionPad" type="Control" parent="." unique_id=1140962041]
 layout_mode = 1
@@ -57,10 +61,10 @@ anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -325.0
-offset_top = -218.0
-offset_right = -240.0
-offset_bottom = -138.0
+offset_left = -356.0
+offset_top = -228.0
+offset_right = -271.0
+offset_bottom = -148.0
 grow_horizontal = 0
 grow_vertical = 0
 focus_mode = 0
@@ -89,31 +93,58 @@ text = "⬇
 SLIDE"
 
 [node name="BtnReload" type="TextureButton" parent="RightActionPad" unique_id=2013996717]
-layout_mode = 0
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
 offset_left = -287.0
 offset_top = -326.0
 offset_right = -161.0
 offset_bottom = -250.0
+grow_horizontal = 0
+grow_vertical = 0
+focus_mode = 0
+action_mode = 0
 texture_normal = ExtResource("6_puaky")
 ignore_texture_size = true
-stretch_mode = 0
+stretch_mode = 5
 
 [node name="BtnJump" type="TextureButton" parent="RightActionPad" unique_id=168227803]
-layout_mode = 0
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
 offset_left = -144.0
 offset_top = -409.0
 offset_right = -64.0
 offset_bottom = -333.0
+grow_horizontal = 0
+grow_vertical = 0
+focus_mode = 0
+action_mode = 0
 texture_normal = ExtResource("7_yr8f1")
 ignore_texture_size = true
-stretch_mode = 0
+stretch_mode = 5
 
 [node name="BtnSprint" type="TextureButton" parent="RightActionPad" unique_id=1044325883]
-layout_mode = 0
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
 offset_left = -374.0
 offset_top = -106.0
 offset_right = -288.0
 offset_bottom = -23.0
+grow_horizontal = 0
+grow_vertical = 0
+focus_mode = 0
+action_mode = 0
 texture_normal = ExtResource("8_0g8qj")
 ignore_texture_size = true
-stretch_mode = 0
+stretch_mode = 5
