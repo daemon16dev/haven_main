@@ -22,15 +22,18 @@ var _last_look_pos: Vector2 = Vector2.ZERO
 # Multi-touch button touch tracking
 var _shoot_touch_id: int = -1
 var _scope_touch_id: int = -1
+var _jump_touch_id: int = -1
+var _reload_touch_id: int = -1
+var _crouch_touch_id: int = -1
 
-# Button nodes
+# Button nodes (support both TextureButton and Button)
 @onready var right_pad: Control = get_node_or_null("RightActionPad")
-@onready var btn_shoot: TextureButton = get_node_or_null("RightActionPad/BtnFire")
-@onready var btn_scope: TextureButton = get_node_or_null("RightActionPad/BtnScope")
-@onready var btn_jump: Button = get_node_or_null("RightActionPad/BtnJump")
-@onready var btn_reload: Button = get_node_or_null("RightActionPad/BtnReload")
-@onready var btn_crouch: Button = get_node_or_null("RightActionPad/BtnCrouch")
-@onready var btn_sprint: Button = get_node_or_null("RightActionPad/BtnSprint")
+@onready var btn_shoot: BaseButton = get_node_or_null("RightActionPad/BtnFire") as BaseButton
+@onready var btn_scope: BaseButton = get_node_or_null("RightActionPad/BtnScope") as BaseButton
+@onready var btn_jump: BaseButton = get_node_or_null("RightActionPad/BtnJump") as BaseButton
+@onready var btn_reload: BaseButton = get_node_or_null("RightActionPad/BtnReload") as BaseButton
+@onready var btn_crouch: BaseButton = get_node_or_null("RightActionPad/BtnCrouch") as BaseButton
+@onready var btn_sprint: BaseButton = get_node_or_null("RightActionPad/BtnSprint") as BaseButton
 
 var is_sprint_active: bool = false
 var _buttons_list: Array[Control] = []
@@ -50,135 +53,59 @@ func _update_joystick_home() -> void:
 	queue_redraw()
 
 func _setup_buttons() -> void:
-	# Fallback if nodes don't exist yet (e.g. instanced without .tscn)
 	if not right_pad:
-		right_pad = Control.new()
-		right_pad.name = "RightActionPad"
-		right_pad.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-		right_pad.anchor_left = 1.0
-		right_pad.anchor_top = 1.0
-		right_pad.anchor_right = 1.0
-		right_pad.anchor_bottom = 1.0
-		right_pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		add_child(right_pad)
+		right_pad = get_node_or_null("RightActionPad")
 
-	# 1. Fire Button (with custom texture asset)
-	if not btn_shoot:
-		btn_shoot = TextureButton.new()
-		btn_shoot.name = "BtnFire"
-		btn_shoot.texture_normal = load("res://assets/ui/btn_fire_normal.png")
-		btn_shoot.texture_pressed = load("res://assets/ui/btn_fire_pressed.png")
-		btn_shoot.ignore_texture_size = true
-		btn_shoot.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
-		btn_shoot.size = Vector2(100, 100)
-		btn_shoot.position = Vector2(-128, -138)
-		right_pad.add_child(btn_shoot)
-	else:
-		if not btn_shoot.texture_normal:
-			btn_shoot.texture_normal = load("res://assets/ui/btn_fire_normal.png")
-		if not btn_shoot.texture_pressed:
-			btn_shoot.texture_pressed = load("res://assets/ui/btn_fire_pressed.png")
+	# Register and configure all action buttons
+	var btns = [btn_shoot, btn_scope, btn_jump, btn_reload, btn_crouch, btn_sprint]
+	for b in btns:
+		if b and is_instance_valid(b):
+			b.focus_mode = Control.FOCUS_NONE
+			b.action_mode = BaseButton.ACTION_MODE_BUTTON_PRESS
+			if b is TextureButton:
+				b.ignore_texture_size = true
+				b.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+			elif b is Button:
+				_style_round_button(b)
+			if not _buttons_list.has(b):
+				_buttons_list.append(b)
 
-	btn_shoot.focus_mode = Control.FOCUS_NONE
-	btn_shoot.action_mode = BaseButton.ACTION_MODE_BUTTON_PRESS
-	btn_shoot.button_down.connect(_on_shoot_down)
-	btn_shoot.button_up.connect(_on_shoot_up)
-	_buttons_list.append(btn_shoot)
+	# Connect button events
+	if btn_shoot:
+		btn_shoot.button_down.connect(_on_shoot_down)
+		btn_shoot.button_up.connect(_on_shoot_up)
+	if btn_scope:
+		btn_scope.button_down.connect(_on_scope_down)
+		btn_scope.button_up.connect(_on_scope_up)
+	if btn_jump:
+		btn_jump.button_down.connect(func(): Input.action_press("ui_accept"))
+		btn_jump.button_up.connect(func(): Input.action_release("ui_accept"))
+	if btn_reload:
+		btn_reload.button_down.connect(func(): Input.action_press("reload"))
+		btn_reload.button_up.connect(func(): Input.action_release("reload"))
+	if btn_crouch:
+		btn_crouch.button_down.connect(func(): Input.action_press("crouch"))
+		btn_crouch.button_up.connect(func(): Input.action_release("crouch"))
+	if btn_sprint:
+		btn_sprint.pressed.connect(_toggle_sprint)
 
-	# 2. Scope Button (with custom texture asset)
-	if not btn_scope:
-		btn_scope = TextureButton.new()
-		btn_scope.name = "BtnScope"
-		btn_scope.texture_normal = load("res://assets/ui/btn_scope_normal.png")
-		btn_scope.texture_pressed = load("res://assets/ui/btn_scope_pressed.png")
-		btn_scope.ignore_texture_size = true
-		btn_scope.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
-		btn_scope.size = Vector2(80, 80)
-		btn_scope.position = Vector2(-222, -122)
-		right_pad.add_child(btn_scope)
-	else:
-		if not btn_scope.texture_normal:
-			btn_scope.texture_normal = load("res://assets/ui/btn_scope_normal.png")
-		if not btn_scope.texture_pressed:
-			btn_scope.texture_pressed = load("res://assets/ui/btn_scope_pressed.png")
-
-	btn_scope.focus_mode = Control.FOCUS_NONE
-	btn_scope.action_mode = BaseButton.ACTION_MODE_BUTTON_PRESS
-	btn_scope.button_down.connect(_on_scope_down)
-	btn_scope.button_up.connect(_on_scope_up)
-	_buttons_list.append(btn_scope)
-
-	# 3. Jump Button
-	if not btn_jump:
-		btn_jump = Button.new()
-		btn_jump.name = "BtnJump"
-		btn_jump.text = "🦘\nJUMP"
-		btn_jump.size = Vector2(64, 64)
-		btn_jump.position = Vector2(-118, -224)
-		right_pad.add_child(btn_jump)
-	_style_round_button(btn_jump, Color(0.25, 0.75, 0.35, 0.65), 13)
-	btn_jump.button_down.connect(func(): Input.action_press("ui_accept"))
-	btn_jump.button_up.connect(func(): Input.action_release("ui_accept"))
-	_buttons_list.append(btn_jump)
-
-	# 4. Reload Button
-	if not btn_reload:
-		btn_reload = Button.new()
-		btn_reload.name = "BtnReload"
-		btn_reload.text = "🔄\nRELOAD"
-		btn_reload.size = Vector2(60, 60)
-		btn_reload.position = Vector2(-208, -196)
-		right_pad.add_child(btn_reload)
-	_style_round_button(btn_reload, Color(0.85, 0.7, 0.2, 0.65), 12)
-	btn_reload.button_down.connect(func(): Input.action_press("reload"))
-	btn_reload.button_up.connect(func(): Input.action_release("reload"))
-	_buttons_list.append(btn_reload)
-
-	# 5. Crouch / Slide Button
-	if not btn_crouch:
-		btn_crouch = Button.new()
-		btn_crouch.name = "BtnCrouch"
-		btn_crouch.text = "⬇\nSLIDE"
-		btn_crouch.size = Vector2(60, 60)
-		btn_crouch.position = Vector2(-48, -230)
-		right_pad.add_child(btn_crouch)
-	_style_round_button(btn_crouch, Color(0.5, 0.3, 0.8, 0.65), 12)
-	btn_crouch.button_down.connect(func(): Input.action_press("crouch"))
-	btn_crouch.button_up.connect(func(): Input.action_release("crouch"))
-	_buttons_list.append(btn_crouch)
-
-	# 6. Sprint Button
-	if not btn_sprint:
-		btn_sprint = Button.new()
-		btn_sprint.name = "BtnSprint"
-		btn_sprint.text = "🏃\nRUN"
-		btn_sprint.size = Vector2(58, 58)
-		btn_sprint.position = Vector2(-292, -88)
-		right_pad.add_child(btn_sprint)
-	_style_round_button(btn_sprint, Color(0.3, 0.3, 0.4, 0.65), 12)
-	btn_sprint.pressed.connect(_toggle_sprint)
-	_buttons_list.append(btn_sprint)
-
-func _style_round_button(btn: Button, bg_col: Color, font_sz: int) -> void:
-	btn.action_mode = BaseButton.ACTION_MODE_BUTTON_PRESS
-	btn.focus_mode = Control.FOCUS_NONE
-
+func _style_round_button(btn: Button) -> void:
 	var normal = StyleBoxFlat.new()
-	normal.bg_color = bg_col
+	normal.bg_color = Color(0.18, 0.22, 0.28, 0.65)
 	normal.border_color = Color(1.0, 1.0, 1.0, 0.4)
 	normal.set_border_width_all(2)
 	normal.set_corner_radius_all(30)
 	btn.add_theme_stylebox_override("normal", normal)
 
 	var pressed = StyleBoxFlat.new()
-	pressed.bg_color = Color(bg_col.r * 1.3, bg_col.g * 1.3, bg_col.b * 1.3, 0.95)
+	pressed.bg_color = Color(0.35, 0.45, 0.55, 0.9)
 	pressed.border_color = Color(1.0, 0.9, 0.3, 1.0)
 	pressed.set_border_width_all(3)
 	pressed.set_corner_radius_all(30)
 	btn.add_theme_stylebox_override("pressed", pressed)
 
 	btn.add_theme_stylebox_override("hover", normal)
-	btn.add_theme_font_size_override("font_size", font_sz)
+	btn.add_theme_font_size_override("font_size", 12)
 
 func _on_shoot_down() -> void:
 	Input.action_press("shoot")
@@ -196,16 +123,22 @@ func _toggle_sprint() -> void:
 	is_sprint_active = not is_sprint_active
 	if is_sprint_active:
 		Input.action_press("sprint")
-		var style = btn_sprint.get_theme_stylebox("normal") as StyleBoxFlat
-		if style:
-			style.bg_color = Color(0.2, 0.85, 0.4, 0.85)
-			style.border_color = Color(1.0, 1.0, 0.2, 1.0)
+		if btn_sprint:
+			if btn_sprint is TextureButton:
+				btn_sprint.modulate = Color(0.35, 1.0, 0.45, 1.0)
+			elif btn_sprint is Button:
+				var style = btn_sprint.get_theme_stylebox("normal") as StyleBoxFlat
+				if style:
+					style.bg_color = Color(0.2, 0.85, 0.4, 0.85)
 	else:
 		Input.action_release("sprint")
-		var style = btn_sprint.get_theme_stylebox("normal") as StyleBoxFlat
-		if style:
-			style.bg_color = Color(0.3, 0.3, 0.4, 0.65)
-			style.border_color = Color(1.0, 1.0, 1.0, 0.4)
+		if btn_sprint:
+			if btn_sprint is TextureButton:
+				btn_sprint.modulate = Color.WHITE
+			elif btn_sprint is Button:
+				var style = btn_sprint.get_theme_stylebox("normal") as StyleBoxFlat
+				if style:
+					style.bg_color = Color(0.18, 0.22, 0.28, 0.65)
 
 func _is_touching_button(pos: Vector2) -> bool:
 	for b in _buttons_list:
@@ -225,14 +158,45 @@ func _input(event: InputEvent) -> void:
 			if btn_shoot and btn_shoot.is_visible_in_tree() and btn_shoot.get_global_rect().has_point(event.position):
 				_shoot_touch_id = event.index
 				_on_shoot_down()
-				btn_shoot.button_pressed = true
+				if btn_shoot is TextureButton:
+					btn_shoot.button_pressed = true
 				return
 
 			# Check direct touch on Scope button
 			if btn_scope and btn_scope.is_visible_in_tree() and btn_scope.get_global_rect().has_point(event.position):
 				_scope_touch_id = event.index
 				_on_scope_down()
-				btn_scope.button_pressed = true
+				if btn_scope is TextureButton:
+					btn_scope.button_pressed = true
+				return
+
+			# Check direct touch on Jump button
+			if btn_jump and btn_jump.is_visible_in_tree() and btn_jump.get_global_rect().has_point(event.position):
+				_jump_touch_id = event.index
+				Input.action_press("ui_accept")
+				if btn_jump is TextureButton:
+					btn_jump.button_pressed = true
+				return
+
+			# Check direct touch on Reload button
+			if btn_reload and btn_reload.is_visible_in_tree() and btn_reload.get_global_rect().has_point(event.position):
+				_reload_touch_id = event.index
+				Input.action_press("reload")
+				if btn_reload is TextureButton:
+					btn_reload.button_pressed = true
+				return
+
+			# Check direct touch on Crouch button
+			if btn_crouch and btn_crouch.is_visible_in_tree() and btn_crouch.get_global_rect().has_point(event.position):
+				_crouch_touch_id = event.index
+				Input.action_press("crouch")
+				if btn_crouch is TextureButton:
+					btn_crouch.button_pressed = true
+				return
+
+			# Check direct touch on Sprint button
+			if btn_sprint and btn_sprint.is_visible_in_tree() and btn_sprint.get_global_rect().has_point(event.position):
+				_toggle_sprint()
 				return
 
 			# Left area: Movement joystick
@@ -251,13 +215,28 @@ func _input(event: InputEvent) -> void:
 			if event.index == _shoot_touch_id:
 				_shoot_touch_id = -1
 				_on_shoot_up()
-				if btn_shoot:
+				if btn_shoot and btn_shoot is TextureButton:
 					btn_shoot.button_pressed = false
 			elif event.index == _scope_touch_id:
 				_scope_touch_id = -1
 				_on_scope_up()
-				if btn_scope:
+				if btn_scope and btn_scope is TextureButton:
 					btn_scope.button_pressed = false
+			elif event.index == _jump_touch_id:
+				_jump_touch_id = -1
+				Input.action_release("ui_accept")
+				if btn_jump and btn_jump is TextureButton:
+					btn_jump.button_pressed = false
+			elif event.index == _reload_touch_id:
+				_reload_touch_id = -1
+				Input.action_release("reload")
+				if btn_reload and btn_reload is TextureButton:
+					btn_reload.button_pressed = false
+			elif event.index == _crouch_touch_id:
+				_crouch_touch_id = -1
+				Input.action_release("crouch")
+				if btn_crouch and btn_crouch is TextureButton:
+					btn_crouch.button_pressed = false
 			elif event.index == _move_touch_id:
 				_reset_joystick()
 			elif event.index == _look_touch_id:
@@ -324,13 +303,28 @@ func reset_all_inputs() -> void:
 	if _shoot_touch_id != -1:
 		_shoot_touch_id = -1
 		_on_shoot_up()
-		if btn_shoot:
+		if btn_shoot and btn_shoot is TextureButton:
 			btn_shoot.button_pressed = false
 	if _scope_touch_id != -1:
 		_scope_touch_id = -1
 		_on_scope_up()
-		if btn_scope:
+		if btn_scope and btn_scope is TextureButton:
 			btn_scope.button_pressed = false
+	if _jump_touch_id != -1:
+		_jump_touch_id = -1
+		Input.action_release("ui_accept")
+		if btn_jump and btn_jump is TextureButton:
+			btn_jump.button_pressed = false
+	if _reload_touch_id != -1:
+		_reload_touch_id = -1
+		Input.action_release("reload")
+		if btn_reload and btn_reload is TextureButton:
+			btn_reload.button_pressed = false
+	if _crouch_touch_id != -1:
+		_crouch_touch_id = -1
+		Input.action_release("crouch")
+		if btn_crouch and btn_crouch is TextureButton:
+			btn_crouch.button_pressed = false
 	if is_sprint_active:
 		_toggle_sprint()
 	Input.action_release("shoot")
