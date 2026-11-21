@@ -1,0 +1,27 @@
+[gd_scene format=3 uid="uid://dkwatx0ruyqiw"]
+
+[ext_resource type="Script" uid="uid://dxyjarmj75kyy" path="res://scripts/player.gd" id="1_3vyb7"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_hav35"]
+
+[node name="Player" type="CharacterBody3D" unique_id=1321118534]
+script = ExtResource("1_3vyb7")
+
+[node name="StandingCollider" type="CollisionShape3D" parent="." unique_id=868862845]
+shape = SubResource("CapsuleShape3D_hav35")
+
+[node name="Camera" type="Camera3D" parent="." unique_id=742507536]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.682684, 0)
+
+[node name="Canvas" type="CanvasLayer" parent="." unique_id=1072977876]
+
+[node name="Health" type="Label" parent="Canvas" unique_id=58321145]
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -23.0
+offset_right = 40.0
+grow_vertical = 0
+size_flags_horizontal = 2
+size_flags_vertical = 10
+text = "Health: 0"
