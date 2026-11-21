@@ -11,6 +11,7 @@ extends Node
 @export var reload_time: float = 1.8
 
 var _base_damage: float = 10.0
+var _damage_multiplier: float = 1.0
 
 @export var normal_fov: float = 75.0
 @export var scoped_fov: float = 35.0
@@ -78,8 +79,9 @@ func _update_ammo_ui() -> void:
 			ammo_label.text = "PRESS R TO RELOAD [0 / %d]" % [reserve_ammo]
 			ammo_label.modulate = Color(1.0, 0.45, 0.45)
 		else:
-			ammo_label.text = "Ammo: %d / %d" % [current_ammo, reserve_ammo]
-			ammo_label.modulate = Color.WHITE
+			var buff_str = " 🔥 [+200% DMG]" if _damage_multiplier > 1.0 else ""
+			ammo_label.text = "Ammo: %d / %d%s" % [current_ammo, reserve_ammo, buff_str]
+			ammo_label.modulate = Color(1.0, 0.75, 0.2) if _damage_multiplier > 1.0 else Color.WHITE
 
 func _unhandled_input(event: InputEvent) -> void:
 	var player = get_parent()
@@ -198,10 +200,15 @@ func add_ammo(amount: int) -> int:
 
 func upgrade_stats(multiplier: float = 1.01) -> void:
 	_base_damage *= multiplier
-	damage = int(round(_base_damage))
+	damage = int(round(_base_damage * _damage_multiplier))
 	max_ammo = int(round(float(max_ammo) * multiplier))
 	max_reserve_ammo = int(round(float(max_reserve_ammo) * multiplier))
 	fire_cooldown = maxf(0.05, fire_cooldown / multiplier)
 	reload_time = maxf(0.4, reload_time / multiplier)
 	zoom_speed *= multiplier
+	_update_ammo_ui()
+
+func set_damage_multiplier(mult: float) -> void:
+	_damage_multiplier = mult
+	damage = int(round(_base_damage * _damage_multiplier))
 	_update_ammo_ui()
