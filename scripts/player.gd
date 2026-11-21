@@ -11,11 +11,11 @@ var HEALTH: int = 100
 var is_dead: bool = false
 var damage_overlay: ColorRect = null
 
-const WALK_SPEED = 5.0
-const SPRINT_SPEED = 8.5
-const CROUCH_SPEED = 2.5
-const SLIDE_SPEED = 11.0
-const JUMP_VELOCITY = 4.5
+@export var walk_speed: float = 5.0
+@export var sprint_speed: float = 8.5
+@export var crouch_speed: float = 2.5
+@export var slide_speed: float = 11.0
+@export var jump_velocity: float = 4.5
 
 @export var mouse_sensitivity: float = 0.003
 @export var slide_duration: float = 0.65
@@ -70,6 +70,71 @@ func _flash_damage() -> void:
 		damage_overlay.color = Color(0.8, 0.0, 0.0, 0.35)
 		var tween2 = create_tween()
 		tween2.tween_property(damage_overlay, "color", Color(0.8, 0.0, 0.0, 0.0), 0.4)
+
+func heal(amount: int) -> int:
+	if is_dead or HEALTH >= max_health:
+		return 0
+	var old_health: int = HEALTH
+	HEALTH = mini(max_health, HEALTH + amount)
+	var gained: int = HEALTH - old_health
+	_update_health_ui()
+	_flash_heal()
+	return gained
+
+func _flash_heal() -> void:
+	if health:
+		health.modulate = Color(0.2, 1.0, 0.3)
+		var tween = create_tween()
+		tween.tween_property(health, "modulate", Color.WHITE, 0.4)
+	if damage_overlay:
+		damage_overlay.color = Color(0.0, 0.8, 0.2, 0.25)
+		var tween2 = create_tween()
+		tween2.tween_property(damage_overlay, "color", Color(0.0, 0.8, 0.2, 0.0), 0.4)
+
+func add_ammo(amount: int) -> int:
+	var weapon = get_node_or_null("Weapon")
+	if weapon and weapon.has_method("add_ammo"):
+		return weapon.add_ammo(amount)
+	return 0
+
+func upgrade_stats(multiplier: float = 1.01) -> void:
+	max_health = int(round(float(max_health) * multiplier))
+	HEALTH = mini(max_health, HEALTH + maxi(1, int(round(float(max_health) * 0.1))))
+	walk_speed *= multiplier
+	sprint_speed *= multiplier
+	crouch_speed *= multiplier
+	slide_speed *= multiplier
+	jump_velocity *= multiplier
+	slide_cooldown = maxf(0.3, slide_cooldown / multiplier)
+	_update_health_ui()
+
+	var weapon = get_node_or_null("Weapon")
+	if weapon and weapon.has_method("upgrade_stats"):
+		weapon.upgrade_stats(multiplier)
+
+	show_popup_notification("+1% ALL STATS UPGRADED!", Color(0.2, 1.0, 0.4))
+
+func show_popup_notification(text: String, color: Color = Color(1.0, 0.9, 0.2)) -> void:
+	var canvas = get_node_or_null("Canvas")
+	if not canvas:
+		return
+	var notif = Label.new()
+	notif.text = text
+	notif.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	notif.anchors_preset = Control.PRESET_CENTER_TOP
+	notif.anchor_left = 0.5
+	notif.anchor_right = 0.5
+	notif.offset_left = -200.0
+	notif.offset_right = 200.0
+	notif.offset_top = 100.0
+	notif.offset_bottom = 140.0
+	notif.modulate = color
+	notif.add_theme_font_size_override("font_size", 22)
+	canvas.add_child(notif)
+	var tween = create_tween()
+	tween.tween_property(notif, "position:y", notif.position.y - 25.0, 1.4)
+	tween.parallel().tween_property(notif, "modulate:a", 0.0, 1.4)
+	tween.tween_callback(notif.queue_free)
 
 func die() -> void:
 	if is_dead:
@@ -147,7 +212,7 @@ func _physics_process(delta: float) -> void:
 	if Input.is_action_just_pressed("ui_accept") and is_on_floor():
 		if is_sliding:
 			_end_slide()
-		velocity.y = JUMP_VELOCITY
+		velocity.y = jump_velocity
 
 	var input_dir := Input.get_vector("strafe_left", "strafe_right", "walk_forward", "walk_backward")
 	var direction := (transform.basis * Vector3(input_dir.x, 0.0, input_dir.y)).normalized()
@@ -159,8 +224,8 @@ func _physics_process(delta: float) -> void:
 	# Handle active slide
 	if is_sliding:
 		slide_timer -= delta
-		velocity.x = slide_direction.x * SLIDE_SPEED
-		velocity.z = slide_direction.z * SLIDE_SPEED
+		velocity.x = slide_direction.x * slide_speed
+		velocity.z = slide_direction.z * slide_speed
 
 		if slide_timer <= 0.0 or not is_on_floor():
 			_end_slide()
@@ -172,11 +237,11 @@ func _physics_process(delta: float) -> void:
 			_set_collision_state(is_crouching)
 
 		var wants_sprint := Input.is_action_pressed("sprint") and not is_crouching and direction != Vector3.ZERO
-		var current_speed := WALK_SPEED
+		var current_speed := walk_speed
 		if is_crouching:
-			current_speed = CROUCH_SPEED
+			current_speed = crouch_speed
 		elif wants_sprint:
-			current_speed = SPRINT_SPEED
+			current_speed = sprint_speed
 
 		if direction:
 			velocity.x = direction.x * current_speed

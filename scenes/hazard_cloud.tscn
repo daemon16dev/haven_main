@@ -1,0 +1,38 @@
+[gd_scene format=3 uid="uid://b8xk42pmvoew5"]
+
+[ext_resource type="Script" path="res://scripts/hazard_cloud.gd" id="1_hazard"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_cloud"]
+radius = 3.5
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cloud"]
+transparency = 1
+albedo_color = Color(0.2, 0.9, 0.1, 0.35)
+emission_enabled = true
+emission = Color(0.2, 1, 0.2, 1)
+emission_energy_multiplier = 0.8
+rim_enabled = true
+rim = 0.5
+
+[sub_resource type="SphereMesh" id="SphereMesh_cloud"]
+material = SubResource("StandardMaterial3D_cloud")
+radius = 3.2
+height = 2.4
+
+[node name="HazardCloud" type="Area3D"]
+collision_layer = 0
+collision_mask = 3
+script = ExtResource("1_hazard")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("SphereShape3D_cloud")
+
+[node name="CloudMesh" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+mesh = SubResource("SphereMesh_cloud")
+
+[node name="OmniLight3D" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+light_color = Color(0.2, 1, 0.2, 1)
+light_energy = 1.8
+omni_range = 4.5

@@ -1,7 +1,9 @@
 [gd_scene format=4 uid="uid://ftkfnysunifo"]
 
 [ext_resource type="PackedScene" uid="uid://dkwatx0ruyqiw" path="res://scenes/player.tscn" id="1_0biqy"]
-[ext_resource type="PackedScene" uid="uid://b6wmwcakjho7l" path="res://scenes/zombie.tscn" id="2_47u71"]
+[ext_resource type="PackedScene" uid="uid://c7wavemanag01" path="res://scenes/wave_manager.tscn" id="2_wavemgr"]
+[ext_resource type="PackedScene" uid="uid://c6xk42pmvoew3" path="res://scenes/ammo_crate.tscn" id="3_ammo"]
+[ext_resource type="PackedScene" uid="uid://dg5k42pmvoew4" path="res://scenes/medkit.tscn" id="4_medkit"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_0biqy"]
 sky_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
@@ -61,4 +63,16 @@ mesh = SubResource("ArrayMesh_0biqy")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.14976215, 0)
 shape = SubResource("ConcavePolygonShape3D_47u71")
 
-[node name="Zombie" parent="." unique_id=603446177 instance=ExtResource("2_47u71")]
+[node name="WaveManager" parent="." instance=ExtResource("2_wavemgr")]
+
+[node name="AmmoCrate1" parent="." instance=ExtResource("3_ammo")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0.2, 15)
+
+[node name="AmmoCrate2" parent="." instance=ExtResource("3_ammo")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 0.2, -15)
+
+[node name="Medkit1" parent="." instance=ExtResource("4_medkit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 0.2, 15)
+
+[node name="Medkit2" parent="." instance=ExtResource("4_medkit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0.2, -15)

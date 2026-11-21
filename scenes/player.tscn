@@ -45,6 +45,23 @@ grow_vertical = 2
 text = "⊹"
 label_settings = SubResource("LabelSettings_qhqgy")
 
+[node name="Ammo" type="Label" parent="Canvas" unique_id=1082977877]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -240.0
+offset_top = -35.0
+offset_right = -20.0
+offset_bottom = -12.0
+grow_horizontal = 0
+grow_vertical = 0
+size_flags_horizontal = 10
+size_flags_vertical = 10
+text = "Ammo: 30 / 90"
+horizontal_alignment = 2
+
 [node name="Head" type="Node3D" parent="." unique_id=443249403]
 
 [node name="Camera" type="Camera3D" parent="Head" unique_id=742507536]
@@ -58,6 +75,7 @@ shape = SubResource("CapsuleShape3D_xvjc1")
 
 [node name="Weapon" type="Node" parent="." unique_id=1674718590]
 script = ExtResource("2_g2els")
+fire_cooldown = 0.15
 
-[node name="Sketchfab_Scene" parent="." unique_id=190570315 instance=ExtResource("3_qhqgy")]
+[node name="WeaponGun" parent="." unique_id=190570315 instance=ExtResource("3_qhqgy")]
 transform = Transform3D(-0.09191643, 0, -0.03938744, 0, 0.099999994, 0, 0.03938744, 0, -0.09191643, 0.39102286, 0.5494793, -0.41126648)

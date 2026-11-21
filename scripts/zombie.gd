@@ -1,22 +1,45 @@
 extends CharacterBody3D
 
+signal died(zombie)
+
+enum ZombieType {
+	TANK,
+	CLINGY,
+	HAZARDOUS,
+	SUPER_TANK
+}
+
+@export var zombie_type: ZombieType = ZombieType.TANK
 @export var speed: float = 1.8
-@export var hearing_radius: float = 15.0
+@export var hearing_radius: float = 120.0
 @export var turn_speed: float = 10.0
 @export var max_hp: int = 100
 @export var attack_damage: int = 20
 @export var attack_range: float = 2.2
 @export var attack_cooldown: float = 1.0
+@export var is_hazardous: bool = false
+@export var is_super_tank: bool = false
+@export var custom_scale: float = 1.0
+@export var ammo_drop_chance: float = 0.20
+@export var medkit_drop_chance: float = 0.12
 
 @onready var nav_agent: NavigationAgent3D = $NavigationAgent3D
+
+const AMMO_CRATE_SCENE = preload("res://scenes/ammo_crate.tscn")
+const MEDKIT_SCENE = preload("res://scenes/medkit.tscn")
+const HAZARD_CLOUD_SCENE = preload("res://scenes/hazard_cloud.tscn")
 
 var player: Node3D = null
 var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 var _map_ready: bool = false
 var hp: int = 100
 var _attack_timer: float = 0.0
+var _is_dead: bool = false
 
 func _ready() -> void:
+	add_to_group("zombies")
+	if custom_scale != 1.0:
+		scale = Vector3(custom_scale, custom_scale, custom_scale)
 	hp = max_hp
 	player = get_tree().get_first_node_in_group("player") as Node3D
 	# Wait one physics frame so NavigationServer3D finishes registering the baked mesh
@@ -24,18 +47,87 @@ func _ready() -> void:
 	_map_ready = true
 
 func take_damage(amount: int) -> void:
+	if _is_dead:
+		return
+
 	hp -= amount
 	if hp <= 0:
-		queue_free()
+		_die()
 		return
-		
-	if has_node("Mesh"):
+
+	_flash_hit()
+
+func _die() -> void:
+	if _is_dead:
+		return
+	_is_dead = true
+	died.emit(self)
+
+	if is_hazardous:
+		_trigger_hazard_explosion()
+
+	_spawn_drops()
+	queue_free()
+
+func _flash_hit() -> void:
+	var tree = get_tree()
+	if not tree:
+		return
+	if has_node("Mesh") and $Mesh.has_method("set_red_tint"):
 		$Mesh.set_red_tint(true)
-		await get_tree().create_timer(0.2).timeout
-		if is_inside_tree() and has_node("Mesh"):
+		await tree.create_timer(0.18).timeout
+		if is_inside_tree() and has_node("Mesh") and $Mesh.has_method("set_red_tint"):
 			$Mesh.set_red_tint(false)
+	else:
+		var csg_nodes = find_children("*", "CSGBox3D")
+		for csg in csg_nodes:
+			if csg is CSGBox3D and csg.material:
+				var orig_mat: Material = csg.material
+				var flash_mat = StandardMaterial3D.new()
+				flash_mat.albedo_color = Color(1.0, 0.2, 0.2)
+				flash_mat.emission_enabled = true
+				flash_mat.emission = Color(1.0, 0.1, 0.1)
+				csg.material = flash_mat
+				tree.create_timer(0.18).timeout.connect(func():
+					if is_inside_tree() and is_instance_valid(csg):
+						csg.material = orig_mat
+				)
+
+func _trigger_hazard_explosion() -> void:
+	var p = get_parent()
+	if p and HAZARD_CLOUD_SCENE:
+		var cloud = HAZARD_CLOUD_SCENE.instantiate()
+		cloud.global_position = global_position
+		p.add_child(cloud)
+
+func _spawn_drops() -> void:
+	var parent_node = get_parent()
+	if not parent_node:
+		return
+
+	if is_super_tank:
+		# Super Tank guaranteed drops
+		_drop_item(parent_node, AMMO_CRATE_SCENE, Vector3(-0.7, 0.4, 0))
+		_drop_item(parent_node, MEDKIT_SCENE, Vector3(0.7, 0.4, 0))
+		return
+
+	var roll = randf()
+	if roll < ammo_drop_chance:
+		_drop_item(parent_node, AMMO_CRATE_SCENE, Vector3(0, 0.3, 0))
+	elif roll < (ammo_drop_chance + medkit_drop_chance):
+		_drop_item(parent_node, MEDKIT_SCENE, Vector3(0, 0.3, 0))
+
+func _drop_item(parent_node: Node, scene: PackedScene, offset: Vector3) -> void:
+	if not scene:
+		return
+	var item = scene.instantiate()
+	item.global_position = global_position + offset
+	parent_node.add_child(item)
 
 func _physics_process(delta: float) -> void:
+	if _is_dead:
+		return
+
 	if _attack_timer > 0.0:
 		_attack_timer = max(0.0, _attack_timer - delta)
 
@@ -75,8 +167,7 @@ func _physics_process(delta: float) -> void:
 		move_and_slide()
 		return
 
-	# Blind behavior: only update the target if the player is within hearing range
-	# (Remove the distance check if you want continuous global tracking)
+	# Update target position if player is within hearing radius
 	if global_position.distance_to(player.global_position) <= hearing_radius:
 		nav_agent.target_position = player.global_position
 
