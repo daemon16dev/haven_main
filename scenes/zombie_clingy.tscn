@@ -1,59 +1,26 @@
 [gd_scene format=3 uid="uid://2b10hs6wjojc"]
 
-[ext_resource type="Script" path="res://scripts/zombie.gd" id="1_zombiescript"]
+[ext_resource type="Script" uid="uid://c43e0pwidq2yf" path="res://scripts/zombie.gd" id="1_zombiescript"]
+[ext_resource type="PackedScene" uid="uid://cf4d7reuvsl1v" path="res://assets/zombie_2.glb" id="2_vksmn"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_clingy"]
-radius = 0.5
-height = 2.0
+height = 1.7243652
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_clingy_body"]
-albedo_color = Color(0.28, 0.22, 0.16, 1)
-roughness = 0.5
-metallic = 0.2
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_clingy_glow"]
-albedo_color = Color(1, 0.4, 0.1, 1)
-emission_enabled = true
-emission = Color(1, 0.45, 0.1, 1)
-emission_energy_multiplier = 2.0
-
-[node name="ZombieClingy" type="CharacterBody3D" groups=["zombies"]]
+[node name="ZombieClingy" type="CharacterBody3D" unique_id=1782154869 groups=["zombies"]]
 script = ExtResource("1_zombiescript")
 zombie_type = 1
 speed = 4.2
+turn_speed = 12.0
 max_hp = 85
 attack_damage = 10
 attack_range = 1.8
 attack_cooldown = 0.65
-turn_speed = 12.0
 
-[node name="CollisionShape" type="CollisionShape3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0, 0)
+[node name="CollisionShape" type="CollisionShape3D" parent="." unique_id=1133328016]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7467041, 0)
 shape = SubResource("CapsuleShape3D_clingy")
 
-[node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="." unique_id=245065742]
 
-[node name="Body" type="CSGBox3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.95, 0)
-size = Vector3(0.55, 1.1, 0.45)
-material = SubResource("StandardMaterial3D_clingy_body")
-
-[node name="Head" type="CSGBox3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.68, 0)
-size = Vector3(0.42, 0.42, 0.42)
-material = SubResource("StandardMaterial3D_clingy_body")
-
-[node name="Eyes" type="CSGBox3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.72, -0.22)
-size = Vector3(0.3, 0.08, 0.06)
-material = SubResource("StandardMaterial3D_clingy_glow")
-
-[node name="ArmL" type="CSGBox3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.38, 1.0, -0.25)
-size = Vector3(0.18, 0.18, 0.6)
-material = SubResource("StandardMaterial3D_clingy_body")
-
-[node name="ArmR" type="CSGBox3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.38, 1.0, -0.25)
-size = Vector3(0.18, 0.18, 0.6)
-material = SubResource("StandardMaterial3D_clingy_body")
+[node name="Sketchfab_Scene" parent="." unique_id=328719585 instance=ExtResource("2_vksmn")]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -0.21224535, -0.14897811, 0.0015434027)

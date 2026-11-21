@@ -75,7 +75,9 @@ shape = SubResource("CapsuleShape3D_xvjc1")
 
 [node name="Weapon" type="Node" parent="." unique_id=1674718590]
 script = ExtResource("2_g2els")
-fire_cooldown = 0.15
+fire_cooldown = 0.0
+max_ammo = 9999
+reserve_ammo = 9999
 
 [node name="WeaponGun" parent="." unique_id=190570315 instance=ExtResource("3_qhqgy")]
 transform = Transform3D(-0.09191643, 0, -0.03938744, 0, 0.099999994, 0, 0.03938744, 0, -0.09191643, 0.39102286, 0.5494793, -0.41126648)

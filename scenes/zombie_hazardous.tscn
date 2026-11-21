@@ -1,23 +1,13 @@
 [gd_scene format=3 uid="uid://d0kb3goojcfyr"]
 
-[ext_resource type="Script" path="res://scripts/zombie.gd" id="1_zombiescript"]
+[ext_resource type="Script" uid="uid://c43e0pwidq2yf" path="res://scripts/zombie.gd" id="1_zombiescript"]
+[ext_resource type="PackedScene" uid="uid://1shmyag57yns" path="res://assets/zombie_3.glb" id="2_6igik"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_hazard"]
 radius = 0.6
 height = 2.1
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hazard_body"]
-albedo_color = Color(0.18, 0.35, 0.15, 1)
-roughness = 0.4
-metallic = 0.3
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hazard_glow"]
-albedo_color = Color(0.2, 1, 0.2, 1)
-emission_enabled = true
-emission = Color(0.2, 1, 0.2, 1)
-emission_energy_multiplier = 2.5
-
-[node name="ZombieHazardous" type="CharacterBody3D" groups=["zombies"]]
+[node name="ZombieHazardous" type="CharacterBody3D" unique_id=1223266367 groups=["zombies"]]
 script = ExtResource("1_zombiescript")
 zombie_type = 2
 speed = 2.1
@@ -25,39 +15,11 @@ max_hp = 90
 attack_damage = 22
 is_hazardous = true
 
-[node name="CollisionShape" type="CollisionShape3D" parent="."]
+[node name="CollisionShape" type="CollisionShape3D" parent="." unique_id=1223162878]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.05, 0)
 shape = SubResource("CapsuleShape3D_hazard")
 
-[node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="." unique_id=153226730]
 
-[node name="Body" type="CSGBox3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.95, 0)
-size = Vector3(0.75, 1.15, 0.55)
-material = SubResource("StandardMaterial3D_hazard_body")
-
-[node name="Head" type="CSGBox3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, 0)
-size = Vector3(0.48, 0.45, 0.45)
-material = SubResource("StandardMaterial3D_hazard_body")
-
-[node name="HazardVial1" type="CSGBox3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.22, 1.2, 0.32)
-size = Vector3(0.22, 0.55, 0.22)
-material = SubResource("StandardMaterial3D_hazard_glow")
-
-[node name="HazardVial2" type="CSGBox3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.22, 1.2, 0.32)
-size = Vector3(0.22, 0.55, 0.22)
-material = SubResource("StandardMaterial3D_hazard_glow")
-
-[node name="Visor" type="CSGBox3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.72, -0.24)
-size = Vector3(0.35, 0.08, 0.06)
-material = SubResource("StandardMaterial3D_hazard_glow")
-
-[node name="OmniLight3D" type="OmniLight3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, 0)
-light_color = Color(0.2, 1, 0.25, 1)
-light_energy = 1.2
-omni_range = 3.5
+[node name="Sketchfab_Scene" parent="." unique_id=1767309610 instance=ExtResource("2_6igik")]
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 0, 0, 0)
