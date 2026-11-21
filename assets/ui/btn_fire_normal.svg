@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <radialGradient id="fireBg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#222b38" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#0f141c" stop-opacity="0.9"/>
+    </radialGradient>
+    <linearGradient id="bulletGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="50%" stop-color="#fff0d0"/>
+      <stop offset="100%" stop-color="#e0b860"/>
+    </linearGradient>
+    <linearGradient id="sideBulletGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffd580"/>
+      <stop offset="100%" stop-color="#d49430"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Base Circle -->
+  <circle cx="128" cy="128" r="118" fill="url(#fireBg)" stroke="#dce6f5" stroke-width="3.5" stroke-opacity="0.75"/>
+  <circle cx="128" cy="128" r="100" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-opacity="0.25"/>
+
+  <!-- Tactical Ticks -->
+  <line x1="128" y1="6" x2="128" y2="20" stroke="#ffc83c" stroke-width="3" stroke-linecap="round"/>
+  <line x1="128" y1="236" x2="128" y2="250" stroke="#ffc83c" stroke-width="3" stroke-linecap="round"/>
+  <line x1="6" y1="128" x2="20" y2="128" stroke="#ffc83c" stroke-width="3" stroke-linecap="round"/>
+  <line x1="236" y1="128" x2="250" y2="128" stroke="#ffc83c" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Left Angled Bullet -->
+  <g transform="translate(90, 134) rotate(-16) scale(0.68)">
+    <path d="M0,-52 C10,-42 12,-20 12,0 L12,40 L10,42 L10,46 L13,47 L13,52 L-13,52 L-13,47 L-10,46 L-10,42 L-12,40 L-12,0 C-12,-20 -10,-42 0,-52 Z" fill="url(#sideBulletGrad)" stroke="#1a1a1a" stroke-width="1.5"/>
+  </g>
+
+  <!-- Right Angled Bullet -->
+  <g transform="translate(166, 134) rotate(16) scale(0.68)">
+    <path d="M0,-52 C10,-42 12,-20 12,0 L12,40 L10,42 L10,46 L13,47 L13,52 L-13,52 L-13,47 L-10,46 L-10,42 L-12,40 L-12,0 C-12,-20 -10,-42 0,-52 Z" fill="url(#sideBulletGrad)" stroke="#1a1a1a" stroke-width="1.5"/>
+  </g>
+
+  <!-- Center Main Bullet -->
+  <g transform="translate(128, 126) scale(0.95)">
+    <path d="M0,-52 C10,-42 12,-20 12,0 L12,40 L10,42 L10,46 L13,47 L13,52 L-13,52 L-13,47 L-10,46 L-10,42 L-12,40 L-12,0 C-12,-20 -10,-42 0,-52 Z" fill="url(#bulletGrad)" stroke="#1a1a1a" stroke-width="1.5"/>
+  </g>
+
+  <!-- Bottom Label -->
+  <text x="128" y="210" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#ffc83c" text-anchor="middle" letter-spacing="2">FIRE</text>
+</svg>

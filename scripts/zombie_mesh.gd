@@ -19,10 +19,18 @@ func _process(delta: float) -> void:
 	if _mat == null:
 		return
 
+	# WebGL performance optimization: don't constantly upload uniform updates when not tinted
+	if not _is_tinted and _mat.albedo_color == _base_albedo:
+		return
+
 	var target_color: Color = _base_albedo
 	if _is_tinted:
 		# Blend slightly toward red without crushing shading details to pure flat red
 		target_color = _base_albedo.lerp(Color(1.0, 0.25, 0.25, _base_albedo.a), red_tint_strength)
+
+	if not _is_tinted and _mat.albedo_color.is_equal_approx(target_color):
+		_mat.albedo_color = target_color
+		return
 
 	_mat.albedo_color = _mat.albedo_color.lerp(target_color, tint_speed * delta)
 

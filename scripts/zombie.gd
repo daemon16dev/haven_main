@@ -28,6 +28,8 @@ enum ZombieType {
 const AMMO_CRATE_SCENE = preload("res://scenes/ammo_crate.tscn")
 const MEDKIT_SCENE = preload("res://scenes/medkit.tscn")
 const HAZARD_CLOUD_SCENE = preload("res://scenes/hazard_cloud.tscn")
+const NORMAL_ZOMBIE_SCREAM = preload("res://assets/audio/all_zombies_scream.mp3")
+const TANK_ZOMBIE_SCREAM = preload("res://assets/audio/tank_and_super_tank_scream.mp3")
 
 var player: Node3D = null
 var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
@@ -36,26 +38,69 @@ var hp: int = 100
 var _attack_timer: float = 0.0
 var _is_dead: bool = false
 
+var voice_player: AudioStreamPlayer3D = null
+var _voice_timer: float = 0.0
+var _nav_update_timer: float = 0.0
+const NAV_UPDATE_INTERVAL: float = 0.35
+
 func _ready() -> void:
 	add_to_group("zombies")
 	if custom_scale != 1.0:
 		scale = Vector3(custom_scale, custom_scale, custom_scale)
 	hp = max_hp
 	player = get_tree().get_first_node_in_group("player") as Node3D
+
+	# Setup 3D voice audio
+	_setup_voice()
+
+	# Stagger initial voice and nav updates to distribute CPU load
+	_voice_timer = randf_range(0.5, 2.5)
+	_nav_update_timer = randf_range(0.02, NAV_UPDATE_INTERVAL)
+
 	# Wait one physics frame so NavigationServer3D finishes registering the baked mesh
 	await get_tree().physics_frame
 	_map_ready = true
 
-func take_damage(amount: int) -> void:
-	if _is_dead:
+func _setup_voice() -> void:
+	voice_player = AudioStreamPlayer3D.new()
+	voice_player.name = "VoicePlayer"
+	# Hazardous and clingy voice as: normal zombie scream
+	# Tank and super tank voice as: tank zombie scream
+	if zombie_type == ZombieType.TANK or zombie_type == ZombieType.SUPER_TANK or is_super_tank:
+		voice_player.stream = TANK_ZOMBIE_SCREAM
+		voice_player.unit_size = 14.0
+		voice_player.max_distance = 60.0
+		voice_player.volume_db = 1.0
+	else:
+		voice_player.stream = NORMAL_ZOMBIE_SCREAM
+		voice_player.unit_size = 9.0
+		voice_player.max_distance = 45.0
+		voice_player.volume_db = 0.0
+
+	voice_player.max_polyphony = 1
+	voice_player.bus = "Master"
+	voice_player.attenuation_model = AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
+	add_child(voice_player)
+
+func play_voice(force: bool = false) -> void:
+	if _is_dead or not voice_player or not is_inside_tree():
 		return
+	if not force and voice_player.playing:
+		return
+	voice_player.pitch_scale = randf_range(0.92, 1.08)
+	voice_player.play()
+
+func take_damage(amount: int) -> bool:
+	if _is_dead:
+		return false
 
 	hp -= amount
 	if hp <= 0:
 		_die()
-		return
+		return true
 
 	_flash_hit()
+	return false
 
 func _die() -> void:
 	if _is_dead:
@@ -167,9 +212,20 @@ func _physics_process(delta: float) -> void:
 		move_and_slide()
 		return
 
-	# Update target position if player is within hearing radius
-	if global_position.distance_to(player.global_position) <= hearing_radius:
-		nav_agent.target_position = player.global_position
+	# Periodically scream / roar during chase
+	if player and not ("is_dead" in player and player.is_dead):
+		_voice_timer -= delta
+		if _voice_timer <= 0.0:
+			_voice_timer = randf_range(5.0, 11.0)
+			if global_position.distance_to(player.global_position) <= hearing_radius:
+				play_voice()
+
+	# Throttled target position calculation (Web performance optimization: avoids 1440 NavMesh queries/sec)
+	_nav_update_timer -= delta
+	if _nav_update_timer <= 0.0:
+		_nav_update_timer = NAV_UPDATE_INTERVAL + randf_range(-0.06, 0.06)
+		if global_position.distance_to(player.global_position) <= hearing_radius:
+			nav_agent.target_position = player.global_position
 
 	if nav_agent.is_navigation_finished():
 		velocity.x = 0.0
@@ -196,5 +252,7 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 
 func _attack_player() -> void:
+	if voice_player and not voice_player.playing and randf() < 0.65:
+		play_voice()
 	if player and player.has_method("take_damage"):
 		player.take_damage(attack_damage)

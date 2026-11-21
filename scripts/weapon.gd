@@ -26,6 +26,8 @@ var position = 0.0
 @onready var gun_mesh: Node3D = get_parent().get_node_or_null("Sketchfab_Scene") as Node3D
 
 var ammo_label: Label = null
+var hitmarker_label: Label = null
+var crosshair_label: Label = null
 var is_scoping: bool = false
 var _can_shoot: bool = true
 var is_reloading: bool = false
@@ -41,8 +43,50 @@ func _ready() -> void:
 		_orig_gun_pos = gun_mesh.position
 		_orig_gun_rot = gun_mesh.rotation
 
+	crosshair_label = get_parent().get_node_or_null("Canvas/CrossHair") as Label
 	_init_ammo_ui()
+	_init_hitmarker()
 	_update_ammo_ui()
+
+func _init_hitmarker() -> void:
+	hitmarker_label = get_parent().get_node_or_null("Canvas/Hitmarker") as Label
+	if not hitmarker_label:
+		var canvas = get_parent().get_node_or_null("Canvas")
+		if canvas:
+			hitmarker_label = Label.new()
+			hitmarker_label.name = "Hitmarker"
+			hitmarker_label.set_anchors_preset(Control.PRESET_CENTER)
+			hitmarker_label.anchor_left = 0.5
+			hitmarker_label.anchor_top = 0.5
+			hitmarker_label.anchor_right = 0.5
+			hitmarker_label.anchor_bottom = 0.5
+			hitmarker_label.offset_left = -20.0
+			hitmarker_label.offset_top = -20.0
+			hitmarker_label.offset_right = 20.0
+			hitmarker_label.offset_bottom = 20.0
+			hitmarker_label.grow_horizontal = Control.GROW_DIRECTION_BOTH
+			hitmarker_label.grow_vertical = Control.GROW_DIRECTION_BOTH
+			hitmarker_label.text = "✕"
+			hitmarker_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			hitmarker_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+			hitmarker_label.add_theme_font_size_override("font_size", 24)
+			hitmarker_label.modulate = Color(1.0, 1.0, 1.0, 0.0)
+			hitmarker_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			canvas.add_child(hitmarker_label)
+
+func _trigger_hitmarker(was_fatal: bool) -> void:
+	if not hitmarker_label:
+		_init_hitmarker()
+	if not hitmarker_label:
+		return
+
+	var target_col: Color = Color(1.0, 0.2, 0.2, 1.0) if was_fatal else Color(1.0, 1.0, 1.0, 0.95)
+	var end_time: float = 0.16 if was_fatal else 0.10
+	var fsize: int = 28 if was_fatal else 22
+	hitmarker_label.add_theme_font_size_override("font_size", fsize)
+	hitmarker_label.modulate = target_col
+	var tween = create_tween()
+	tween.tween_property(hitmarker_label, "modulate:a", 0.0, end_time)
 
 func _init_ammo_ui() -> void:
 	ammo_label = get_parent().get_node_or_null("Canvas/Ammo")
@@ -70,14 +114,18 @@ func _update_ammo_ui() -> void:
 		_init_ammo_ui()
 	if ammo_label:
 		if is_reloading:
-			ammo_label.text = "Reloading... [%d / %d]" % [current_ammo, reserve_ammo]
+			ammo_label.text = "RELOADING... [%d / %d]" % [current_ammo, reserve_ammo]
 			ammo_label.modulate = Color(1.0, 0.85, 0.3)
 		elif current_ammo == 0 and reserve_ammo == 0:
-			ammo_label.text = "NO AMMO [0 / 0]"
-			ammo_label.modulate = Color(1.0, 0.25, 0.25)
+			ammo_label.text = "EMPTY! [0 / 0]"
+			ammo_label.modulate = Color(1.0, 0.2, 0.2)
 		elif current_ammo == 0:
-			ammo_label.text = "PRESS R TO RELOAD [0 / %d]" % [reserve_ammo]
-			ammo_label.modulate = Color(1.0, 0.45, 0.45)
+			ammo_label.text = "PRESS R TO RELOAD! [0 / %d]" % [reserve_ammo]
+			ammo_label.modulate = Color(1.0, 0.25, 0.25)
+		elif current_ammo <= 5:
+			var buff_str = " 🔥 [+200% DMG]" if _damage_multiplier > 1.0 else ""
+			ammo_label.text = "LOW AMMO: %d / %d%s" % [current_ammo, reserve_ammo, buff_str]
+			ammo_label.modulate = Color(1.0, 0.6, 0.2)
 		else:
 			var buff_str = " 🔥 [+200% DMG]" if _damage_multiplier > 1.0 else ""
 			ammo_label.text = "Ammo: %d / %d%s" % [current_ammo, reserve_ammo, buff_str]
@@ -137,7 +185,14 @@ func _shoot() -> void:
 	if aim_ray.is_colliding():
 		var hit: Object = aim_ray.get_collider()
 		if hit and hit.has_method("take_damage"):
-			hit.take_damage(damage)
+			var was_fatal: bool = bool(hit.take_damage(damage))
+			_trigger_hitmarker(was_fatal)
+
+	# Crosshair recoil expansion
+	if crosshair_label:
+		crosshair_label.scale = Vector2(1.3, 1.3)
+		var ch_tween = create_tween()
+		ch_tween.tween_property(crosshair_label, "scale", Vector2.ONE, 0.08)
 
 	# Slight gun recoil feedback
 	if gun_mesh and not is_reloading:

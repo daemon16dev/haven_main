@@ -1,6 +1,7 @@
 extends CharacterBody3D
 
 @onready var health = $Canvas/Health
+@onready var health_bar = get_node_or_null("Canvas/HealthBar")
 @onready var head: Node3D = $Head
 @onready var camera: Camera3D = $Head/Camera # Change to $Head/Camera3D if named Camera3D
 @onready var standing_collision: CollisionShape3D = $StandingCollision
@@ -46,12 +47,42 @@ var surge_overlay: ColorRect = null
 var surge_mat: ShaderMaterial = null
 var surge_label: Label = null
 
+var mobile_controls: MobileControls = null
+var settings_menu: SettingsMenu = null
+var mobile_controls_enabled: bool = false
+var btn_settings: Button = null
+
+const PLAYER_DEATH_SCREAM = preload("res://assets/audio/player_death_scream.mp3")
+
 func _ready() -> void:
 	HEALTH = max_health
 	stand_head_y = head.position.y
 	_set_collision_state(false) # Start standing
-	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
+	# Load saved settings
+	mobile_controls_enabled = bool(SettingsMenu.load_setting("mobile_controls", false))
+	mouse_sensitivity = float(SettingsMenu.load_setting("look_sensitivity", 0.003))
+	var saved_scale: float = float(SettingsMenu.load_setting("render_scale", 1.0))
+	get_viewport().scaling_3d_scale = saved_scale
+
+	if not mobile_controls_enabled:
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
 	_setup_ui()
+
+func _input(event: InputEvent) -> void:
+	if is_dead:
+		return
+
+	# Don't capture mouse if settings menu is open
+	if settings_menu and settings_menu.visible:
+		return
+
+	# On PC (mobile controls OFF): clicking screen captures mouse pointer seamlessly with zero HUD clutter
+	if not mobile_controls_enabled:
+		if event is InputEventMouseButton and event.pressed:
+			if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
+				Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 func _setup_ui() -> void:
 	_update_health_ui()
@@ -98,15 +129,88 @@ func _setup_ui() -> void:
 		damage_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		canvas.add_child(damage_overlay)
 
+		# Mobile touch controls layer (from scenes/mobile_controls.tscn, hidden on PC unless enabled via Settings)
+		mobile_controls = get_node_or_null("Canvas/MobileControls") as MobileControls
+		if not mobile_controls:
+			var mobile_scene = load("res://scenes/mobile_controls.tscn")
+			if mobile_scene:
+				mobile_controls = mobile_scene.instantiate() as MobileControls
+				canvas.add_child(mobile_controls)
+		if mobile_controls:
+			mobile_controls.player = self
+			if not mobile_controls.look_moved.is_connected(_on_mobile_look_moved):
+				mobile_controls.look_moved.connect(_on_mobile_look_moved)
+			mobile_controls.visible = mobile_controls_enabled
+
+		# Settings menu scene (instantiated from res://scenes/settings_menu.tscn)
+		settings_menu = get_node_or_null("Canvas/SettingsMenu") as SettingsMenu
+		if not settings_menu:
+			var settings_scene = load("res://scenes/settings_menu.tscn")
+			if settings_scene:
+				settings_menu = settings_scene.instantiate() as SettingsMenu
+				canvas.add_child(settings_menu)
+		if settings_menu:
+			settings_menu.mobile_controls_toggled.connect(set_mobile_controls_enabled)
+			settings_menu.sensitivity_changed.connect(set_mouse_sensitivity)
+			settings_menu.render_scale_changed.connect(func(scale_val: float):
+				get_viewport().scaling_3d_scale = scale_val
+			)
+			settings_menu.closed.connect(_on_settings_closed)
+			settings_menu.initialize_settings(mobile_controls_enabled, mouse_sensitivity, get_viewport().scaling_3d_scale)
+
+		# Small, discreet Settings Button (top-right, zero interference with PC HUD)
+		btn_settings = Button.new()
+		btn_settings.name = "BtnSettings"
+		btn_settings.text = "⚙"
+		btn_settings.focus_mode = Control.FOCUS_NONE
+		btn_settings.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+		btn_settings.anchor_left = 1.0
+		btn_settings.anchor_right = 1.0
+		btn_settings.offset_left = -46.0
+		btn_settings.offset_top = 14.0
+		btn_settings.offset_right = -14.0
+		btn_settings.offset_bottom = 46.0
+		var btn_st = StyleBoxFlat.new()
+		btn_st.bg_color = Color(0.12, 0.12, 0.16, 0.5)
+		btn_st.border_color = Color(1.0, 1.0, 1.0, 0.3)
+		btn_st.set_border_width_all(1)
+		btn_st.set_corner_radius_all(16)
+		btn_settings.add_theme_stylebox_override("normal", btn_st)
+		var btn_st_hover = btn_st.duplicate()
+		btn_st_hover.bg_color = Color(0.2, 0.2, 0.28, 0.8)
+		btn_settings.add_theme_stylebox_override("hover", btn_st_hover)
+		btn_settings.add_theme_font_size_override("font_size", 18)
+		btn_settings.pressed.connect(_open_settings)
+		canvas.add_child(btn_settings)
+
 func _update_health_ui() -> void:
+	if not health_bar and has_node("Canvas/HealthBar"):
+		health_bar = get_node("Canvas/HealthBar")
 	if health:
 		if is_invincible:
-			health.text = "Health: " + str(HEALTH) + " [INVINCIBLE]"
+			health.text = "HP: %d / %d [INVINCIBLE]" % [HEALTH, max_health]
 			health.modulate = Color(1.0, 0.88, 0.25)
 		else:
-			health.text = "Health: " + str(HEALTH)
-			if health.modulate == Color(1.0, 0.88, 0.25):
-				health.modulate = Color.WHITE
+			health.text = "HP: %d / %d" % [HEALTH, max_health]
+			var health_pct: float = float(HEALTH) / float(maxf(1.0, float(max_health)))
+			if health_pct > 0.55:
+				health.modulate = Color(0.3, 0.9, 0.45)
+			elif health_pct > 0.30:
+				health.modulate = Color(1.0, 0.85, 0.25)
+			else:
+				health.modulate = Color(1.0, 0.3, 0.3)
+
+	if health_bar:
+		health_bar.max_value = max_health
+		var tween = create_tween()
+		tween.tween_property(health_bar, "value", float(HEALTH), 0.15)
+		var health_pct: float = float(HEALTH) / float(maxf(1.0, float(max_health)))
+		if health_pct > 0.55:
+			health_bar.modulate = Color(0.25, 0.85, 0.4)
+		elif health_pct > 0.30:
+			health_bar.modulate = Color(1.0, 0.85, 0.25)
+		else:
+			health_bar.modulate = Color(1.0, 0.25, 0.25)
 
 func take_damage(amount: int) -> void:
 	if is_dead:
@@ -279,7 +383,18 @@ func die() -> void:
 		_end_low_health_surge()
 	if surge_overlay:
 		surge_overlay.visible = false
+	if mobile_controls:
+		mobile_controls.reset_all_inputs()
 	_update_health_ui()
+
+	# Player death scream sound
+	var death_scream_node = AudioStreamPlayer.new()
+	death_scream_node.name = "DeathScream"
+	death_scream_node.stream = PLAYER_DEATH_SCREAM
+	death_scream_node.volume_db = 1.0
+	death_scream_node.bus = "Master"
+	add_child(death_scream_node)
+	death_scream_node.play()
 
 	if health:
 		health.text = "YOU DIED\nPress 'R' or wait to restart"
@@ -309,18 +424,47 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_tree().reload_current_scene()
 		return
 
-	# Toggle mouse capture with Esc so you can use a UI slider if needed
+	# ESC opens / closes Settings menu
 	if event.is_action_pressed("ui_cancel"):
-		if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
-			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-		else:
-			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+		if settings_menu:
+			if settings_menu.visible:
+				settings_menu.close_menu()
+			else:
+				settings_menu.open_menu()
+		return
 
-	# Mouse look: yaw on CharacterBody3D, pitch on Head
+	# PC Mouse look: yaw on CharacterBody3D, pitch on Head (only when mouse is captured)
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		rotate_y(-event.relative.x * mouse_sensitivity)
 		head.rotate_x(-event.relative.y * mouse_sensitivity)
 		head.rotation.x = clamp(head.rotation.x, deg_to_rad(-85.0), deg_to_rad(85.0))
+
+func set_mobile_controls_enabled(enabled: bool) -> void:
+	mobile_controls_enabled = enabled
+	if mobile_controls:
+		mobile_controls.visible = enabled
+		if not enabled:
+			mobile_controls.reset_all_inputs()
+	if enabled:
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	else:
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
+func _on_mobile_look_moved(relative: Vector2) -> void:
+	if is_dead:
+		return
+	var touch_sens: float = mouse_sensitivity * 1.6
+	rotate_y(-relative.x * touch_sens)
+	head.rotate_x(-relative.y * touch_sens)
+	head.rotation.x = clamp(head.rotation.x, deg_to_rad(-85.0), deg_to_rad(85.0))
+
+func _open_settings() -> void:
+	if settings_menu:
+		settings_menu.open_menu()
+
+func _on_settings_closed() -> void:
+	if not is_dead and not mobile_controls_enabled:
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 # Connect an HSlider's "value_changed(value)" signal to this if using a sensitivity slider
 func set_mouse_sensitivity(value: float) -> void:

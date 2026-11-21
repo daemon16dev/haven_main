@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <radialGradient id="scopeBg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#222b38" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#0f141c" stop-opacity="0.9"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Base Circle -->
+  <circle cx="128" cy="128" r="118" fill="url(#scopeBg)" stroke="#dce6f5" stroke-width="3.5" stroke-opacity="0.75"/>
+
+  <!-- Tactical Reticle Rings -->
+  <circle cx="128" cy="128" r="70" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-opacity="0.9"/>
+  <circle cx="128" cy="128" r="34" fill="none" stroke="#64d2ff" stroke-width="1.5" stroke-opacity="0.7"/>
+  <circle cx="128" cy="128" r="3" fill="#ff5050"/>
+
+  <!-- Main Crosshairs -->
+  <line x1="128" y1="22" x2="128" y2="94" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="128" y1="162" x2="128" y2="234" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="22" y1="128" x2="94" y2="128" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="162" y1="128" x2="234" y2="128" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Elevation Hash Marks on Bottom Bar -->
+  <line x1="118" y1="175" x2="138" y2="175" stroke="#64d2ff" stroke-width="2" stroke-linecap="round"/>
+  <line x1="121" y1="190" x2="135" y2="190" stroke="#64d2ff" stroke-width="2" stroke-linecap="round"/>
+  <line x1="123" y1="205" x2="133" y2="205" stroke="#64d2ff" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Windage Hash Marks on Left & Right Bars -->
+  <line x1="75" y1="122" x2="75" y2="134" stroke="#64d2ff" stroke-width="2" stroke-linecap="round"/>
+  <line x1="181" y1="122" x2="181" y2="134" stroke="#64d2ff" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Corner Brackets -->
+  <path d="M45,65 L45,45 L65,45" fill="none" stroke="#ffc83c" stroke-width="2"/>
+  <path d="M211,65 L211,45 L191,45" fill="none" stroke="#ffc83c" stroke-width="2"/>
+  <path d="M45,191 L45,211 L65,211" fill="none" stroke="#ffc83c" stroke-width="2"/>
+  <path d="M211,191 L211,211 L191,211" fill="none" stroke="#ffc83c" stroke-width="2"/>
+
+  <!-- Bottom Label -->
+  <text x="128" y="210" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#64d2ff" text-anchor="middle" letter-spacing="2">AIM</text>
+</svg>

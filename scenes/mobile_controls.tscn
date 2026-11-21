@@ -1,0 +1,140 @@
+[gd_scene format=3 uid="uid://clhawqoeaye1u"]
+
+[ext_resource type="Script" path="res://scripts/mobile_controls.gd" id="1_mobile"]
+[ext_resource type="Texture2D" path="res://assets/ui/btn_fire_normal.png" id="2_fire_n"]
+[ext_resource type="Texture2D" path="res://assets/ui/btn_fire_pressed.png" id="3_fire_p"]
+[ext_resource type="Texture2D" path="res://assets/ui/btn_scope_normal.png" id="4_scope_n"]
+[ext_resource type="Texture2D" path="res://assets/ui/btn_scope_pressed.png" id="5_scope_p"]
+
+[node name="MobileControls" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_mobile")
+
+[node name="RightActionPad" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="BtnFire" type="TextureButton" parent="RightActionPad"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -128.0
+offset_top = -138.0
+offset_right = -28.0
+offset_bottom = -38.0
+grow_horizontal = 0
+grow_vertical = 0
+focus_mode = 0
+action_mode = 0
+texture_normal = ExtResource("2_fire_n")
+texture_pressed = ExtResource("3_fire_p")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="BtnScope" type="TextureButton" parent="RightActionPad"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -222.0
+offset_top = -122.0
+offset_right = -142.0
+offset_bottom = -42.0
+grow_horizontal = 0
+grow_vertical = 0
+focus_mode = 0
+action_mode = 0
+texture_normal = ExtResource("4_scope_n")
+texture_pressed = ExtResource("5_scope_p")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="BtnJump" type="Button" parent="RightActionPad"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -118.0
+offset_top = -224.0
+offset_right = -54.0
+offset_bottom = -160.0
+grow_horizontal = 0
+grow_vertical = 0
+focus_mode = 0
+action_mode = 0
+text = "🦘
+JUMP"
+
+[node name="BtnReload" type="Button" parent="RightActionPad"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -208.0
+offset_top = -196.0
+offset_right = -148.0
+offset_bottom = -136.0
+grow_horizontal = 0
+grow_vertical = 0
+focus_mode = 0
+action_mode = 0
+text = "🔄
+RELOAD"
+
+[node name="BtnCrouch" type="Button" parent="RightActionPad"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -48.0
+offset_top = -230.0
+offset_right = 12.0
+offset_bottom = -170.0
+grow_horizontal = 0
+grow_vertical = 0
+focus_mode = 0
+action_mode = 0
+text = "⬇
+SLIDE"
+
+[node name="BtnSprint" type="Button" parent="RightActionPad"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -292.0
+offset_top = -88.0
+offset_right = -234.0
+offset_bottom = -30.0
+grow_horizontal = 0
+grow_vertical = 0
+focus_mode = 0
+action_mode = 0
+text = "🏃
+RUN"
