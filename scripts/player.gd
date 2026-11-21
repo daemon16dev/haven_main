@@ -6,7 +6,11 @@ extends CharacterBody3D
 @onready var standing_collision: CollisionShape3D = $StandingCollision
 @onready var crouch_collider: CollisionShape3D = $CrouchCollider
 
-var HEALTH = 100
+var HEALTH: int = 100
+@export var max_health: int = 100
+var is_dead: bool = false
+var damage_overlay: ColorRect = null
+
 const WALK_SPEED = 5.0
 const SPRINT_SPEED = 8.5
 const CROUCH_SPEED = 2.5
@@ -27,11 +31,81 @@ var stand_head_y: float = 0.0
 @export var crouch_head_offset: float = -0.6
 
 func _ready() -> void:
+	HEALTH = max_health
 	stand_head_y = head.position.y
 	_set_collision_state(false) # Start standing
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	_setup_ui()
+
+func _setup_ui() -> void:
+	_update_health_ui()
+	var canvas := get_node_or_null("Canvas")
+	if canvas:
+		damage_overlay = ColorRect.new()
+		damage_overlay.name = "DamageOverlay"
+		damage_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+		damage_overlay.color = Color(1.0, 0.0, 0.0, 0.0)
+		damage_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		canvas.add_child(damage_overlay)
+
+func _update_health_ui() -> void:
+	if health:
+		health.text = "Health: " + str(HEALTH)
+
+func take_damage(amount: int) -> void:
+	if is_dead:
+		return
+	HEALTH = max(0, HEALTH - amount)
+	_update_health_ui()
+	_flash_damage()
+	if HEALTH <= 0:
+		die()
+
+func _flash_damage() -> void:
+	if health:
+		health.modulate = Color(1.0, 0.2, 0.2)
+		var tween = create_tween()
+		tween.tween_property(health, "modulate", Color.WHITE, 0.3)
+	if damage_overlay:
+		damage_overlay.color = Color(0.8, 0.0, 0.0, 0.35)
+		var tween2 = create_tween()
+		tween2.tween_property(damage_overlay, "color", Color(0.8, 0.0, 0.0, 0.0), 0.4)
+
+func die() -> void:
+	if is_dead:
+		return
+	is_dead = true
+	HEALTH = 0
+	_update_health_ui()
+
+	if health:
+		health.text = "YOU DIED\nPress 'R' or wait to restart"
+		health.modulate = Color(1.0, 0.2, 0.2)
+
+	if damage_overlay:
+		damage_overlay.color = Color(0.6, 0.0, 0.0, 0.4)
+		var tween = create_tween()
+		tween.tween_property(damage_overlay, "color", Color(0.3, 0.0, 0.0, 0.75), 1.2)
+
+	# Camera death effect: slight tilt and drop
+	var cam_tween = create_tween()
+	cam_tween.tween_property(head, "position:y", stand_head_y - 0.7, 0.5)
+	cam_tween.parallel().tween_property(head, "rotation:z", deg_to_rad(25.0), 0.5)
+
+	# Release mouse capture so user can see cursor if desired
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+
+	# Auto-reload current scene after 3 seconds
+	await get_tree().create_timer(3.0).timeout
+	if is_dead and is_inside_tree():
+		get_tree().reload_current_scene()
 
 func _unhandled_input(event: InputEvent) -> void:
+	if is_dead:
+		if event is InputEventKey and event.pressed and event.keycode == KEY_R:
+			get_tree().reload_current_scene()
+		return
+
 	# Toggle mouse capture with Esc so you can use a UI slider if needed
 	if event.is_action_pressed("ui_cancel"):
 		if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
@@ -50,8 +124,16 @@ func set_mouse_sensitivity(value: float) -> void:
 	mouse_sensitivity = value
 
 func _physics_process(delta: float) -> void:
-	health.text = "Health: " + str(HEALTH)
-	HEALTH = HEALTH - 1
+	if is_dead:
+		if not is_on_floor():
+			velocity += get_gravity() * delta
+		else:
+			velocity.x = move_toward(velocity.x, 0.0, 10.0 * delta)
+			velocity.z = move_toward(velocity.z, 0.0, 10.0 * delta)
+		move_and_slide()
+		return
+
+	_update_health_ui()
 
 	# Update slide cooldown timer
 	if slide_cooldown_timer > 0.0:

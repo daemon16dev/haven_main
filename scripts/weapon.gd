@@ -1,6 +1,6 @@
 extends Node
 
-@export var damage: int = 34
+@export var damage: int = 10
 @export var fire_cooldown: float = 0.25
 
 @export var normal_fov: float = 75.0
@@ -23,10 +23,16 @@ func _ready() -> void:
 		camera.fov = normal_fov
 
 func _unhandled_input(_event: InputEvent) -> void:
+	var player = get_parent()
+	if player and "is_dead" in player and player.is_dead:
+		return
 	if Input.is_action_pressed("shoot") and _can_shoot:
 		_shoot()
 
 func _process(delta: float) -> void:
+	var player = get_parent()
+	if player and "is_dead" in player and player.is_dead:
+		return
 	is_scoping = Input.is_action_pressed("scope")
 
 	var target_pos: Vector3 = ads_pos if is_scoping else hip_pos
